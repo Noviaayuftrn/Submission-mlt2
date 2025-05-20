@@ -86,6 +86,15 @@ Alasan: Untuk mempersiapkan input yang sesuai bagi masing-masing model (berbasis
 
 ### 1. Content-Based Filtering
 Pendekatan Content-Based Filtering digunakan dalam proyek ini karena sangat cocok diterapkan ketika hanya tersedia informasi preferensi dari satu pengguna tanpa memerlukan data dari pengguna lain. Metode ini berfokus pada kemiripan antar item (dalam hal ini film) berdasarkan fitur-fitur seperti genre, deskripsi, dan metadata lainnya. Dalam implementasinya, digunakan pendekatan Cosine Similarity untuk mengukur tingkat kemiripan antar film berdasarkan representasi vektor fitur yang diperoleh melalui teknik seperti TF-IDF atau Count Vectorizer. Fungsi recommend(title) dibuat untuk menerima input berupa judul film dan mengembalikan top-10 film yang paling mirip berdasarkan nilai cosine similarity. Pendekatan ini dipilih karena sifatnya yang sederhana namun efektif dalam memberikan rekomendasi yang relevan secara konten, terutama jika pengguna sudah memiliki film favorit sebagai referensi awal. Selain itu, metode ini tidak membutuhkan data rating dari pengguna lain, sehingga sangat sesuai jika menghadapi masalah cold-start pada pengguna baru.
+```python
+def recommend(title, cosine_sim=cosine_sim):
+    idx = indices[title]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    sim_scores = sim_scores[1:11]  
+    movie_indices = [i[0] for i in sim_scores]
+    return movies['title'].iloc[movie_indices]
+```
 
 - Contoh output untuk "Toy Story (1995)":
   
@@ -106,6 +115,20 @@ Pendekatan Content-Based Filtering digunakan dalam proyek ini karena sangat coco
 
 ### 2. Collaborative Filtering
 Untuk pendekatan Collaborative Filtering, digunakan algoritma SVD (Singular Value Decomposition) yang tersedia dalam library Surprise. Pemilihan SVD didasarkan pada kemampuannya sebagai salah satu teknik Matrix Factorization yang kuat dalam mempelajari preferensi pengguna secara laten dari data rating historis. SVD dapat menangkap hubungan kompleks antara pengguna dan item, meskipun hubungan tersebut tidak secara eksplisit tersedia dalam data. Dalam implementasinya, data rating terlebih dahulu diformat menggunakan objek Dataset dari Surprise, dengan Reader untuk menentukan skala rating yang digunakan. Dataset kemudian dibagi menjadi dua bagian, yaitu train set (80%) dan test set (20%), untuk keperluan pelatihan dan evaluasi model. Selanjutnya, model SVD dilatih (fit) menggunakan trainset untuk menghasilkan prediksi rating yang dapat digunakan dalam sistem rekomendasi.
+```python
+# Format data untuk Surprise
+reader = Reader(rating_scale=(0.5, 5.0))
+data_cf = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
+
+# Split data menjadi train dan test (80% train, 20% test)
+trainset, testset = train_test_split(data_cf, test_size=0.2, random_state=42)
+
+# Gunakan model SVD
+model = SVD()
+
+# Training model dengan data train
+model.fit(trainset)
+```
 
 - Output: Prediksi rating pengguna terhadap film, kemudian diurutkan untuk mendapatkan Top-N recommendation
 
