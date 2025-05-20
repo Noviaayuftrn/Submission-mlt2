@@ -169,7 +169,7 @@ for uid, user_ratings in top_n.items():
         title = movie_id_to_title.get(movie_id, "Unknown Title")
         print(f"  {title} (MovieID: {movie_id}) - Predicted Rating: {predicted_rating:.2f}")
     print("="*40)
-    break  # tampilkan 1 user sebagai contoh
+    break  
 ```
 ### Hasil
 Hasil dari top-N recommendation membuktikan bahwa:
