@@ -85,10 +85,8 @@ Alasan: Untuk mempersiapkan input yang sesuai bagi masing-masing model (berbasis
 ## Modeling and Result
 
 ### 1. Content-Based Filtering
-- Film direpresentasikan berdasarkan genre menggunakan TF-IDF.
-- Rekomendasi dihitung berdasarkan kemiripan cosine antar vektor genre.
-- Fungsi rekomendasi dibuat berdasarkan film yang diberikan
-- Output: Top-10 film paling mirip
+Pendekatan Content-Based Filtering digunakan dalam proyek ini karena sangat cocok diterapkan ketika hanya tersedia informasi preferensi dari satu pengguna tanpa memerlukan data dari pengguna lain. Metode ini berfokus pada kemiripan antar item (dalam hal ini film) berdasarkan fitur-fitur seperti genre, deskripsi, dan metadata lainnya. Dalam implementasinya, digunakan pendekatan Cosine Similarity untuk mengukur tingkat kemiripan antar film berdasarkan representasi vektor fitur yang diperoleh melalui teknik seperti TF-IDF atau Count Vectorizer. Fungsi recommend(title) dibuat untuk menerima input berupa judul film dan mengembalikan top-10 film yang paling mirip berdasarkan nilai cosine similarity. Pendekatan ini dipilih karena sifatnya yang sederhana namun efektif dalam memberikan rekomendasi yang relevan secara konten, terutama jika pengguna sudah memiliki film favorit sebagai referensi awal. Selain itu, metode ini tidak membutuhkan data rating dari pengguna lain, sehingga sangat sesuai jika menghadapi masalah cold-start pada pengguna baru.
+
 - Contoh output untuk "Toy Story (1995)":
   
   | Index | Title                                                               |
@@ -107,11 +105,8 @@ Alasan: Untuk mempersiapkan input yang sesuai bagi masing-masing model (berbasis
 
 
 ### 2. Collaborative Filtering
+Untuk pendekatan Collaborative Filtering, digunakan algoritma SVD (Singular Value Decomposition) yang tersedia dalam library Surprise. Pemilihan SVD didasarkan pada kemampuannya sebagai salah satu teknik Matrix Factorization yang kuat dalam mempelajari preferensi pengguna secara laten dari data rating historis. SVD dapat menangkap hubungan kompleks antara pengguna dan item, meskipun hubungan tersebut tidak secara eksplisit tersedia dalam data. Dalam implementasinya, data rating terlebih dahulu diformat menggunakan objek Dataset dari Surprise, dengan Reader untuk menentukan skala rating yang digunakan. Dataset kemudian dibagi menjadi dua bagian, yaitu train set (80%) dan test set (20%), untuk keperluan pelatihan dan evaluasi model. Selanjutnya, model SVD dilatih (fit) menggunakan trainset untuk menghasilkan prediksi rating yang dapat digunakan dalam sistem rekomendasi.
 
-- Teknik: SVD (Singular Value Decomposition) dari library `Surprise`
-- Dataset dibagi menjadi 80% train dan 20% test.
-- Model dilatih menggunakan data rating pengguna.
-- Input: matriks userId, movieId, rating
 - Output: Prediksi rating pengguna terhadap film, kemudian diurutkan untuk mendapatkan Top-N recommendation
 
 ### Kelebihan dan Kekurangan:
@@ -145,6 +140,43 @@ Alasan: Untuk mempersiapkan input yang sesuai bagi masing-masing model (berbasis
   - MAE: **0.6953**
 
 > Insight: Model cukup baik dalam memprediksi rating pengguna dengan error <1, semakin akurat prediksi rating terhadap data test.
+---
+### Implementasi Top-N Recommendation
+```python
+from collections import defaultdict
+
+def get_top_n(predictions, n=10):
+    top_n = defaultdict(list)
+    for uid, iid, true_r, est, _ in predictions:
+        top_n[uid].append((iid, est))
+    for uid, user_ratings in top_n.items():
+        user_ratings.sort(key=lambda x: x[1], reverse=True)
+        top_n[uid] = user_ratings[:n]
+    return top_n
+```
+Fungsi ini akan:
+- Mengelompokkan prediksi berdasarkan userId
+- Menyortir prediksi berdasarkan nilai rating tertinggi
+- Mengambil n film teratas (default: 10)
+
+### Output Rekomendasi berdasarkan nama film
+```python
+movie_id_to_title = dict(zip(movies['movieId'], movies['title']))
+
+for uid, user_ratings in top_n.items():
+    print(f"User {uid} Top-{len(user_ratings)} recommendations:")
+    for movie_id, predicted_rating in user_ratings:
+        title = movie_id_to_title.get(movie_id, "Unknown Title")
+        print(f"  {title} (MovieID: {movie_id}) - Predicted Rating: {predicted_rating:.2f}")
+    print("="*40)
+    break  # tampilkan 1 user sebagai contoh
+```
+### Hasil
+Hasil dari top-N recommendation membuktikan bahwa:
+- Sistem berhasil memberikan 10 film rekomendasi terbaik untuk masing-masing pengguna.
+- Rekomendasi bersifat personalisasi berdasarkan preferensi historis pengguna.
+- Sistem siap digunakan untuk aplikasi nyata seperti layanan streaming film, dengan potensi meningkatkan pengalaman pengguna melalui rekomendasi yang relevan.
+---
 
 ### Hubungan dengan Business Understanding dan Problem Statement
 - Sistem rekomendasi yang dikembangkan sudah menjawab problem utama, yaitu menyediakan rekomendasi film yang relevan dan personal bagi pengguna. Content-Based Filtering sangat efektif dalam memberikan rekomendasi yang tepat dari segi kemiripan konten, sedangkan Collaborative Filtering mampu memprediksi rating dengan akurasi yang memadai, membantu personalisasi.
