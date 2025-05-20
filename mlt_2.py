@@ -242,4 +242,48 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
 plt.show()
 
-"""Visualisasi ini menunjukkan performa model SVD berdasarkan metrik RMSE dan MAE. Kedua metrik digunakan untuk mengukur akurasi prediksi rating, di mana nilai yang lebih rendah menunjukkan hasil yang lebih baik."""
+"""Visualisasi ini menunjukkan performa model SVD berdasarkan metrik RMSE dan MAE. Kedua metrik digunakan untuk mengukur akurasi prediksi rating, di mana nilai yang lebih rendah menunjukkan hasil yang lebih baik.
+
+# inference
+
+menghasilkan rekomendasi Top-N berdasarkan hasil model Collaborative Filtering (SVD) yang sudah dilatih sebelumnya.
+"""
+
+from collections import defaultdict
+
+def get_top_n(predictions, n=10):
+    top_n = defaultdict(list)
+    for uid, iid, true_r, est, _ in predictions:
+        top_n[uid].append((iid, est))
+    for uid, user_ratings in top_n.items():
+        user_ratings.sort(key=lambda x: x[1], reverse=True)
+        top_n[uid] = user_ratings[:n]
+    return top_n
+
+top_n = get_top_n(predictions, n=10)
+
+"""Fungsi get_top_n mengelompokkan prediksi rating berdasarkan user, lalu mengurutkan dan memilih top-N rekomendasi dengan rating tertinggi untuk setiap user."""
+
+# Menampilkan 2 pengguna pertama saja
+for i, (uid, user_ratings) in enumerate(top_n.items()):
+    print(f"User {uid} Top-{len(user_ratings)} recommendations:")
+    for movie_id, predicted_rating in user_ratings:
+        print(f"  MovieID: {movie_id}, Predicted Rating: {predicted_rating:.2f}")
+    print("="*40)
+    if i == 1:
+        break
+
+"""Menampilkan rekomendasi top-N untuk dua user pertama, mencetak movie ID dan prediksi ratingnya secara singkat."""
+
+movie_id_to_title = dict(zip(movies['movieId'], movies['title']))
+
+# menampilkan rekomendasi lengkap dengan judul film
+for uid, user_ratings in top_n.items():
+    print(f"User {uid} Top-{len(user_ratings)} recommendations:")
+    for movie_id, predicted_rating in user_ratings:
+        title = movie_id_to_title.get(movie_id, "Unknown Title")
+        print(f"  {title} (MovieID: {movie_id}) - Predicted Rating: {predicted_rating:.2f}")
+    print("="*40)
+    break
+
+"""Membuat mapping dari movieId ke judul film, lalu menampilkan rekomendasi untuk satu user dengan judul film lengkap beserta prediksi ratingnya."""
