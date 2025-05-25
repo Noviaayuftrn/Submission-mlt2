@@ -28,22 +28,33 @@ Untuk mencapai tujuan di atas, dua pendekatan digunakan:
 
 ## Data Understanding
 
-Dataset yang digunakan adalah **MovieLens 20M** yang dapat diunduh di [Kaggle: MovieLens 20M](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset).  
-File yang digunakan:
-- `movies.csv` — Informasi film (`movieId`, `title`, `genres`)
-- `ratings.csv` — Interaksi pengguna terhadap film (`userId`, `movieId`, `rating`, `timestamp`)
+Proyek ini menggunakan MovieLens 20M Dataset, yang berisi lebih dari 20 juta rating film dan aktivitas tagging sejak tahun 1995. Dataset ini sering digunakan sebagai benchmark dalam penelitian sistem rekomendasi.
+
+### URL Sumber Data:
+- [Kaggle: MovieLens 20M](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset)
 
 ### Jumlah Data:
-- Film: 27,000+
-- Interaksi rating yang diproses: 500,000 sampel (subset untuk efisiensi)
+- movies.csv: 27,278 baris × 3 kolom
+- ratings.csv: 20,000,263 baris × 4 kolom
 
-### Variabel:
-- `movieId`: ID unik untuk film
-- `title`: Judul film
-- `genres`: Daftar genre film yang dipisahkan dengan "|"
-- `userId`: ID unik pengguna
-- `rating`: Nilai rating dari pengguna (0.5 - 5.0)
-- `timestamp`: Waktu rating diberikan
+Dalam proyek ini, ratings.csv dibatasi hingga 500,000 baris untuk efisiensi pemrosesan.
+
+### Kondisi Data:
+- **Missing Values:** Tidak ditemukan nilai yang hilang pada kedua dataset.
+- **Duplikat:** Duplikat pada data gabungan (ratings dan movies) telah dihapus.
+- **Outlier:** Tidak dilakukan penanganan outlier karena rating berada dalam rentang 0.5 hingga 5.0.
+
+### Uraian Fitur
+**Movies.csv**
+- `movieId`: ID unik untuk setiap film.
+- `title`: Judul film beserta tahun rilis.
+- `genres`: Daftar genre yang dipisahkan oleh tanda '|'.
+
+**ratings.csv**
+- `userId`: ID unik untuk setiap  pengguna.
+- `movieId`: ID film yang dirating.
+- `rating`: Rating dari pengguna (0.5 hingga 5.0).
+- `timestamps`: Waktu rating diberikan (dalam format UNIX timestamp).
 
 ### Exploratory Data Analysis (EDA)
 - **Distribusi genre**
@@ -66,20 +77,49 @@ File yang digunakan:
 
 ## Data Preparation
 
-Tahapan persiapan data yang dilakukan:
+**Handling Missing Values**
+- Tidak ada nilai yang hilang pada kedua dataset, sehingga tidak diperlukan penanganan khusus.
 
-1. **Penggabungan Data**: `movies.csv` dan `ratings.csv` digabungkan berdasarkan `movieId`.
-2. **Pembersihan Data**:
-   - Menghapus kolom `timestamp`.
-   - Menghapus duplikat jika ada.
-   - Menghapus "(no genres listed)" untuk genre kosong.
-3. **Ekstraksi Fitur (Content-Based)**:
-   - Genre diubah menjadi vektor dengan `TfidfVectorizer` menggunakan token `|`.
-   - Dihitung kemiripan antar film menggunakan `cosine_similarity`.
-   - Dibuat indeks pencarian berdasarkan `title` film.
+**Handling Duplicates**
+- Duplikat pada data gabungan telah dihapus menggunakan `drop_duplicates()`.
 
-Alasan: Untuk mempersiapkan input yang sesuai bagi masing-masing model (berbasis konten dan berbasis pengguna).
+**Handling Outliers**
+- Distribusi rating diperiksa menggunakan histogram. Tidak ditemukan outlier ekstrem yang memerlukan penanganan khusus.
 
+**Content-Based Filtering Preparation**
+- Ekstraksi Fitur TF-IDF: Menggunakan TfidfVectorizer untuk mengubah kolom genres menjadi representasi numerik yang dapat digunakan untuk menghitung kesamaan antar film. token_pattern=r'[^|]+' digunakan untuk memisahkan genre yang dipisahkan oleh '|'.
+  
+  ```python
+  tfidf = TfidfVectorizer(token_pattern=r'[^|]+')
+  tfidf_matrix = tfidf.fit_transform(movies['genres'])
+  ```
+  
+- Cosine Similarity: Menghitung kesamaan antar film berdasarkan vektor TF-IDF.
+
+  ```python
+  cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+  ```
+  
+- Mapping Judul ke Indeks: Membuat mapping dari judul film ke indeks untuk mempermudah pencarian film berdasarkan judul.
+
+    ```python
+  indices = pd.Series(movies.index, index=movies['title']).drop_duplicates()
+  ```
+
+**Collaborative Filtering Preparation**
+- Encode Label: Menggunakan library Surprise untuk membangun model collaborative filtering. Reader digunakan untuk menentukan skala rating, dan Dataset.load_from_df untuk memuat data ke dalam format yang sesuai.
+
+  ```python
+  reader = Reader(rating_scale=(0.5, 5.0))
+  data_cf = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
+  ```
+
+- Split Data: Membagi data menjadi training dan testing set dengan rasio 80:20 menggunakan `train_test_split()`.
+
+  ```python
+  trainset, testset = train_test_split(data_cf, test_size=0.2, random_state=42)
+  ```
+    
 ---
 
 ## Modeling and Result
@@ -182,7 +222,7 @@ Fungsi ini akan:
 - Menyortir prediksi berdasarkan nilai rating tertinggi
 - Mengambil n film teratas (default: 10)
 
-### Output Rekomendasi berdasarkan nama film
+### Output Rekomendasi untuk User 982 untuk MovieID, dan rating:
 ```python
 movie_id_to_title = dict(zip(movies['movieId'], movies['title']))
 
@@ -194,6 +234,67 @@ for uid, user_ratings in top_n.items():
     print("="*40)
     break  
 ```
+Menampilkan 2 pengguna pertama dan menampilkan MovieID dan predicted rating saja.
+
+#### User ID: 982
+
+| No | Movie ID | Predicted Rating |
+|----|----------|------------------|
+| 1  | 1089     | 4.21             |
+| 2  | 6016     | 4.19             |
+| 3  | 3307     | 4.15             |
+| 4  | 608      | 4.10             |
+| 5  | 1175     | 4.10             |
+| 6  | 1233     | 4.06             |
+| 7  | 720      | 4.05             |
+| 8  | 7371     | 4.05             |
+| 9  | 2997     | 4.04             |
+| 10 | 1136     | 4.02             |
+
+#### User ID: 515
+
+| No | Movie ID | Predicted Rating |
+|----|----------|------------------|
+| 1  | 47       | 4.36             |
+| 2  | 150      | 4.22             |
+| 3  | 292      | 3.89             |
+| 4  | 587      | 3.86             |
+| 5  | 500      | 3.76             |
+| 6  | 597      | 3.72             |
+| 7  | 588      | 3.69             |
+| 8  | 316      | 3.66             |
+| 9  | 288      | 3.62             |
+| 10 | 586      | 3.42             |
+
+---
+### Output Rekomendasi untuk User 982 untuk Judul, MovieID, dan rating:
+```python
+movie_id_to_title = dict(zip(movies['movieId'], movies['title']))
+
+for uid, user_ratings in top_n.items():
+    print(f"User {uid} Top-{len(user_ratings)} recommendations:")
+    for movie_id, predicted_rating in user_ratings:
+        title = movie_id_to_title.get(movie_id, "Unknown Title")
+        print(f"  {title} (MovieID: {movie_id}) - Predicted Rating: {predicted_rating:.2f}")
+    print("="*40)
+    break  
+```
+Menampilkan 1 pengguna pertama saja (`break` langsung di luar loop) dan menampilkan judul film + MovieID + predicted rating
+
+| No. | Judul Film                                                                 | MovieID | Predicted Rating |
+|-----|----------------------------------------------------------------------------|---------|------------------|
+| 1   | Reservoir Dogs (1992)                                                     | 1089    | 4.21             |
+| 2   | City of God (Cidade de Deus) (2002)                                       | 6016    | 4.19             |
+| 3   | City Lights (1931)                                                        | 3307    | 4.15             |
+| 4   | Fargo (1996)                                                               | 608     | 4.10             |
+| 5   | Delicatessen (1991)                                                       | 1175    | 4.10             |
+| 6   | Boot, Das (Boat, The) (1981)                                              | 1233    | 4.06             |
+| 7   | Wallace & Gromit: The Best of Aardman Animation (1996)                    | 720     | 4.05             |
+| 8   | Dogville (2003)                                                           | 7371    | 4.05             |
+| 9   | Being John Malkovich (1999)                                               | 2997    | 4.04             |
+| 10  | Monty Python and the Holy Grail (1975)                                    | 1136    | 4.02             | 
+
+
 ### Hasil
 Hasil dari top-N recommendation membuktikan bahwa:
 - Sistem berhasil memberikan 10 film rekomendasi terbaik untuk masing-masing pengguna.
