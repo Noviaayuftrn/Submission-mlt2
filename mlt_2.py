@@ -89,6 +89,13 @@ plt.show()
 # Data Processing
 """
 
+# Cek missing value
+print(movies.isnull().sum())
+print("\n")
+print(ratings.isnull().sum())
+
+"""Melakukan cek missing value pada dataset movie dan rating"""
+
 # Merge ratings dan movies
 data = pd.merge(ratings, movies, on='movieId')
 
