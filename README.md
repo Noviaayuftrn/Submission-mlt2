@@ -222,7 +222,7 @@ Fungsi ini akan:
 - Menyortir prediksi berdasarkan nilai rating tertinggi
 - Mengambil n film teratas (default: 10)
 
-### Output Rekomendasi untuk User 982 untuk MovieID, dan rating:
+### Output Rekomendasi untuk dua user menampilkan MovieID, dan rating:
 ```python
 movie_id_to_title = dict(zip(movies['movieId'], movies['title']))
 
@@ -267,7 +267,7 @@ Menampilkan 2 pengguna pertama dan menampilkan MovieID dan predicted rating saja
 | 10 | 586      | 3.42             |
 
 ---
-### Output Rekomendasi untuk User 982 untuk Judul, MovieID, dan rating:
+### Output Rekomendasi untuk User 982 menampilkan Judul, MovieID, dan rating:
 ```python
 movie_id_to_title = dict(zip(movies['movieId'], movies['title']))
 
