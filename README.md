@@ -84,7 +84,7 @@ Dalam proyek ini, ratings.csv dibatasi hingga 500,000 baris untuk efisiensi pemr
 - Duplikat pada data gabungan telah dihapus menggunakan `drop_duplicates()`.
 
 **Handling Outliers**
-- Distribusi rating diperiksa menggunakan histogram. Tidak ditemukan outlier ekstrem yang memerlukan penanganan khusus.
+- Distribusi rating diperiksa menggunakan histogram. Tidak ditemukan outlier ekstrem yang memerlukan penanganan khusus karena rating berada dalam rentang 0.5 hingga 5.0.
 
 **Content-Based Filtering Preparation**
 - Ekstraksi Fitur TF-IDF: Menggunakan TfidfVectorizer untuk mengubah kolom genres menjadi representasi numerik yang dapat digunakan untuk menghitung kesamaan antar film. token_pattern=r'[^|]+' digunakan untuk memisahkan genre yang dipisahkan oleh '|'.
