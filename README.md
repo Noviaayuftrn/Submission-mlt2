@@ -372,7 +372,7 @@ Hasil dari top-N recommendation membuktikan bahwa:
 - **Metrik**: RMSE (Root Mean Squared Error)** dan **MAE (Mean Absolute Error)
 - **Hasil Evaluasi**:
   - RMSE: **0.8553**
-  - MAE: **0.6553**
+  - MAE: **0.6533**
 
 > Insight: Model cukup baik dalam memprediksi rating pengguna dengan error <1, semakin akurat prediksi rating terhadap data test.
 ---
