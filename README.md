@@ -86,18 +86,34 @@ Dalam proyek ini, ratings.csv dibatasi hingga 500,000 baris untuk efisiensi pemr
 **Handling Outliers**
 - Distribusi rating diperiksa menggunakan histogram. Tidak ditemukan outlier ekstrem yang memerlukan penanganan khusus karena rating berada dalam rentang 0.5 hingga 5.0.
 
+**Menggabungkan data `ratings` dan `movies`**
+- Untuk mendapatkan informasi lengkap tentang film dan rating yang diberikan oleh pengguna dalam satu dataframe. Ini diperlukan untuk analisis lanjutan dan pembuatan model.
+
+```python
+  tfidf = TfidfVectorizer(token_pattern=r'[^|]+')
+  tfidf_matrix = tfidf.fit_transform(movies['genres'])
+  ```
+
+**Menghapus kolom `timestamp`**
+- Kolom `timestamp` tidak relevan dalam sistem rekomendasi ini karena tidak digunakan untuk pemodelan. Penghapusannya membuat data lebih bersih dan efisien.
+
+```python
+ data.drop(['timestamp'], axis=1, inplace=True)
+```
+
+**Membersihkan data tanpa genre**
+- Film tanpa genre dapat memengaruhi hasil sistem rekomendasi berbasis konten karena genre digunakan sebagai fitur utama. Dengan mengosongkan atau menyesuaikannya, model bisa bekerja lebih baik.
+
+```python
+  movies['genres'] = movies['genres'].replace('(no genres listed)', '')
+```
+
 **Content-Based Filtering Preparation**
 - Ekstraksi Fitur TF-IDF: Menggunakan TfidfVectorizer untuk mengubah kolom genres menjadi representasi numerik yang dapat digunakan untuk menghitung kesamaan antar film. token_pattern=r'[^|]+' digunakan untuk memisahkan genre yang dipisahkan oleh '|'.
   
   ```python
   tfidf = TfidfVectorizer(token_pattern=r'[^|]+')
   tfidf_matrix = tfidf.fit_transform(movies['genres'])
-  ```
-  
-- Cosine Similarity: Menghitung kesamaan antar film berdasarkan vektor TF-IDF.
-
-  ```python
-  cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
   ```
   
 - Mapping Judul ke Indeks: Membuat mapping dari judul film ke indeks untuk mempermudah pencarian film berdasarkan judul.
@@ -126,6 +142,13 @@ Dalam proyek ini, ratings.csv dibatasi hingga 500,000 baris untuk efisiensi pemr
 
 ### 1. Content-Based Filtering
 Pendekatan Content-Based Filtering digunakan dalam proyek ini karena sangat cocok diterapkan ketika hanya tersedia informasi preferensi dari satu pengguna tanpa memerlukan data dari pengguna lain. Metode ini berfokus pada kemiripan antar item (dalam hal ini film) berdasarkan fitur-fitur seperti genre, deskripsi, dan metadata lainnya. Dalam implementasinya, digunakan pendekatan Cosine Similarity untuk mengukur tingkat kemiripan antar film berdasarkan representasi vektor fitur yang diperoleh melalui teknik seperti TF-IDF atau Count Vectorizer. Fungsi recommend(title) dibuat untuk menerima input berupa judul film dan mengembalikan top-10 film yang paling mirip berdasarkan nilai cosine similarity. Pendekatan ini dipilih karena sifatnya yang sederhana namun efektif dalam memberikan rekomendasi yang relevan secara konten, terutama jika pengguna sudah memiliki film favorit sebagai referensi awal. Selain itu, metode ini tidak membutuhkan data rating dari pengguna lain, sehingga sangat sesuai jika menghadapi masalah cold-start pada pengguna baru.
+
+- Cosine Similarity: Menghitung kesamaan antar film berdasarkan vektor TF-IDF.
+
+  ```python
+  cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+  ```
+
 ```python
 def recommend(title, cosine_sim=cosine_sim):
     idx = indices[title]
