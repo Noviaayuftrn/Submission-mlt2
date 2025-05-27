@@ -89,24 +89,24 @@ Dalam proyek ini, ratings.csv dibatasi hingga 500,000 baris untuk efisiensi pemr
 **Menggabungkan data `ratings` dan `movies`**
 - Untuk mendapatkan informasi lengkap tentang film dan rating yang diberikan oleh pengguna dalam satu dataframe. Ini diperlukan untuk analisis lanjutan dan pembuatan model.
 
-```python
-  tfidf = TfidfVectorizer(token_pattern=r'[^|]+')
-  tfidf_matrix = tfidf.fit_transform(movies['genres'])
-  ```
+  ```python
+    tfidf = TfidfVectorizer(token_pattern=r'[^|]+')
+    tfidf_matrix = tfidf.fit_transform(movies['genres'])
+    ```
 
 **Menghapus kolom `timestamp`**
 - Kolom `timestamp` tidak relevan dalam sistem rekomendasi ini karena tidak digunakan untuk pemodelan. Penghapusannya membuat data lebih bersih dan efisien.
 
-```python
- data.drop(['timestamp'], axis=1, inplace=True)
-```
+  ```python
+   data.drop(['timestamp'], axis=1, inplace=True)
+  ```
 
 **Membersihkan data tanpa genre**
 - Film tanpa genre dapat memengaruhi hasil sistem rekomendasi berbasis konten karena genre digunakan sebagai fitur utama. Dengan mengosongkan atau menyesuaikannya, model bisa bekerja lebih baik.
 
-```python
-  movies['genres'] = movies['genres'].replace('(no genres listed)', '')
-```
+  ```python
+    movies['genres'] = movies['genres'].replace('(no genres listed)', '')
+  ```
 
 **Content-Based Filtering Preparation**
 - Ekstraksi Fitur TF-IDF: Menggunakan TfidfVectorizer untuk mengubah kolom genres menjadi representasi numerik yang dapat digunakan untuk menghitung kesamaan antar film. token_pattern=r'[^|]+' digunakan untuk memisahkan genre yang dipisahkan oleh '|'.
