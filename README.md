@@ -143,21 +143,23 @@ Dalam proyek ini, ratings.csv dibatasi hingga 500,000 baris untuk efisiensi pemr
 ### 1. Content-Based Filtering
 Pendekatan Content-Based Filtering digunakan dalam proyek ini karena sangat cocok diterapkan ketika hanya tersedia informasi preferensi dari satu pengguna tanpa memerlukan data dari pengguna lain. Metode ini berfokus pada kemiripan antar item (dalam hal ini film) berdasarkan fitur-fitur seperti genre, deskripsi, dan metadata lainnya. Dalam implementasinya, digunakan pendekatan Cosine Similarity untuk mengukur tingkat kemiripan antar film berdasarkan representasi vektor fitur yang diperoleh melalui teknik seperti TF-IDF atau Count Vectorizer. Fungsi recommend(title) dibuat untuk menerima input berupa judul film dan mengembalikan top-10 film yang paling mirip berdasarkan nilai cosine similarity. Pendekatan ini dipilih karena sifatnya yang sederhana namun efektif dalam memberikan rekomendasi yang relevan secara konten, terutama jika pengguna sudah memiliki film favorit sebagai referensi awal. Selain itu, metode ini tidak membutuhkan data rating dari pengguna lain, sehingga sangat sesuai jika menghadapi masalah cold-start pada pengguna baru.
 
-- Cosine Similarity: Menghitung kesamaan antar film berdasarkan vektor TF-IDF.
+- Cosine Similarity: Kode ini membentuk dasar dari sistem content-based recommendation, dengan menghitung sejauh mana kemiripan antar film berdasarkan deskripsi atau metadata mereka yang sudah diubah menjadi representasi numerik dengan TF-IDF.
 
   ```python
   cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
   ```
 
-```python
-def recommend(title, cosine_sim=cosine_sim):
-    idx = indices[title]
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    sim_scores = sim_scores[1:11]  
-    movie_indices = [i[0] for i in sim_scores]
-    return movies['title'].iloc[movie_indices]
-```
+- Fungsi `recommend()` digunakan untuk menghasilkan 10 film teratas yang mirip dengan film yang diberikan, berdasarkan kemiripan konten (genres). Fungsi ini mencari indeks film dari judul yang dimasukkan, menghitung skor kemiripan cosine terhadap seluruh film lain, mengurutkannya secara menurun, dan mengambil 10 film teratas (dikecualikan film itu sendiri). Output dari fungsi ini berupa daftar judul film yang paling relevan secara konten dengan input yang diberikan.
+  
+  ```python
+  def recommend(title, cosine_sim=cosine_sim):
+      idx = indices[title]
+      sim_scores = list(enumerate(cosine_sim[idx]))
+      sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+      sim_scores = sim_scores[1:11]  
+      movie_indices = [i[0] for i in sim_scores]
+      return movies['title'].iloc[movie_indices]
+  ```
 
 - Contoh output untuk "Toy Story (1995)":
   
@@ -195,37 +197,55 @@ model.fit(trainset)
 
 - Output: Prediksi rating pengguna terhadap film, kemudian diurutkan untuk mendapatkan Top-N recommendation
 
-### Kelebihan dan Kekurangan:
+```python
+from collections import defaultdict
 
-| Pendekatan            | Kelebihan                                                  | Kekurangan                                                   |
-|-----------------------|------------------------------------------------------------|---------------------------------------------------------------|
-| Content-Based         | Tidak butuh interaksi pengguna, cocok untuk pengguna baru | Tidak bisa menangkap selera tersembunyi dari pengguna        |
-| Collaborative         | Menangkap pola preferensi pengguna                        | Butuh banyak data interaksi, cold start untuk pengguna baru  |
+# Buat prediksi pada data test
+predictions = model.test(testset)
 
----
+# Fungsi untuk mendapatkan top-N rekomendasi per user
+def get_top_n(predictions, n=10):
+    top_n = defaultdict(list)
+    for uid, iid, true_r, est, _ in predictions:
+        top_n[uid].append((iid, est))
 
-## Evaluation
+    # Urutkan setiap user berdasarkan rating prediksi tertinggi
+    for uid, user_ratings in top_n.items():
+        user_ratings.sort(key=lambda x: x[1], reverse=True)
+        top_n[uid] = user_ratings[:n]
 
-### Content-Based Filtering
+    return top_n
 
-- **Metrik**: Precision, Recall, F1-Score
-- **Threshold Similarity**: ≥ 0.3 untuk dianggap relevan
+# Ambil top-10 rekomendasi untuk setiap user
+top_n = get_top_n(predictions, n=10)
 
-**Hasil Evaluasi:**
-- Average Precision: **0.9775**
-- Average Recall: **0.0018**
-- Average F1-Score: **0.0037**
+# Contoh: tampilkan rekomendasi untuk userId tertentu (misalnya 822)
+for uid, user_ratings in top_n.items():
+    if uid == 822:
+        print(f"Rekomendasi untuk user {uid}:")
+        for i, (movie_id, rating) in enumerate(user_ratings, 1):
+            print(f"{i}. MovieID: {movie_id}, Predicted Rating: {rating:.2f}")
+        break
+```
+- Setelah model SVD dilatih, dilakukan prediksi terhadap data uji menggunakan metode `.test()`. Selanjutnya, dilakukan proses pemeringkatan hasil prediksi dengan membuat fungsi `get_top_n()` untuk mengambil 10 film dengan prediksi rating tertinggi untuk setiap pengguna. Fungsi ini menyimpan hasil prediksi ke dalam struktur data dictionary berdasarkan `userId`, kemudian diurutkan berdasarkan nilai prediksi tertinggi.
 
-> Insight: Precision tinggi, namun recall sangat rendah karena pendekatan ini tidak mempertimbangkan rating dari pengguna lain.
+  Sebagai contoh, ditampilkan 10 film dengan nilai prediksi tertinggi untuk pengguna dengan `userId = 822`. Hasil ini mencerminkan film-film yang kemungkinan besar akan disukai oleh pengguna tersebut berdasarkan pola preferensi yang telah dipelajari oleh model.
 
-### Collaborative Filtering
+- Output rekomendasi untuk user 822:
 
-- **Metrik**: RMSE (Root Mean Squared Error)** dan **MAE (Mean Absolute Error)
-- **Hasil Evaluasi**:
-  - RMSE: **0.8851**
-  - MAE: **0.6953**
+  | No | MovieID | Predicted Rating |
+  |----|---------|------------------|
+  | 1  | 7153    | 4.46             |
+  | 2  | 2959    | 4.30             |
+  | 3  | 260     | 4.20             |
+  | 4  | 1291    | 4.08             |
+  | 5  | 2762    | 3.96             |
+  | 6  | 1136    | 3.94             |
+  | 7  | 40815   | 3.90             |
+  | 8  | 4963    | 3.88             |
+  | 9  | 4973    | 3.81             |
+  | 10 | 8368    | 3.80             |
 
-> Insight: Model cukup baik dalam memprediksi rating pengguna dengan error <1, semakin akurat prediksi rating terhadap data test.
 ---
 ### Implementasi Top-N Recommendation
 ```python
@@ -261,33 +281,33 @@ Menampilkan 2 pengguna pertama dan menampilkan MovieID dan predicted rating saja
 
 #### User ID: 982
 
-| No | Movie ID | Predicted Rating |
-|----|----------|------------------|
-| 1  | 1089     | 4.21             |
-| 2  | 6016     | 4.19             |
-| 3  | 3307     | 4.15             |
-| 4  | 608      | 4.10             |
-| 5  | 1175     | 4.10             |
-| 6  | 1233     | 4.06             |
-| 7  | 720      | 4.05             |
-| 8  | 7371     | 4.05             |
-| 9  | 2997     | 4.04             |
-| 10 | 1136     | 4.02             |
+| No | MovieID | Predicted Rating |
+|----|---------|------------------|
+| 1  | 1136    | 4.28             |
+| 2  | 3307    | 4.17             |
+| 3  | 6016    | 4.14             |
+| 4  | 1252    | 4.13             |
+| 5  | 1089    | 4.13             |
+| 6  | 1175    | 4.12             |
+| 7  | 1230    | 4.09             |
+| 8  | 2966    | 4.09             |
+| 9  | 1212    | 4.07             |
+| 10 | 6350    | 4.06             |
 
 #### User ID: 515
 
-| No | Movie ID | Predicted Rating |
-|----|----------|------------------|
-| 1  | 47       | 4.36             |
-| 2  | 150      | 4.22             |
-| 3  | 292      | 3.89             |
-| 4  | 587      | 3.86             |
-| 5  | 500      | 3.76             |
-| 6  | 597      | 3.72             |
-| 7  | 588      | 3.69             |
-| 8  | 316      | 3.66             |
-| 9  | 288      | 3.62             |
-| 10 | 586      | 3.42             |
+| No | MovieID | Predicted Rating |
+|----|---------|------------------|
+| 1  | 47      | 4.66             |
+| 2  | 150     | 3.93             |
+| 3  | 292     | 3.84             |
+| 4  | 288     | 3.78             |
+| 5  | 588     | 3.69             |
+| 6  | 316     | 3.65             |
+| 7  | 587     | 3.60             |
+| 8  | 597     | 3.57             |
+| 9  | 500     | 3.38             |
+| 10 | 586     | 3.36             |
 
 ---
 ### Output Rekomendasi untuk User 982 menampilkan Judul, MovieID, dan rating:
@@ -323,8 +343,39 @@ Hasil dari top-N recommendation membuktikan bahwa:
 - Sistem berhasil memberikan 10 film rekomendasi terbaik untuk masing-masing pengguna.
 - Rekomendasi bersifat personalisasi berdasarkan preferensi historis pengguna.
 - Sistem siap digunakan untuk aplikasi nyata seperti layanan streaming film, dengan potensi meningkatkan pengalaman pengguna melalui rekomendasi yang relevan.
+
+### Kelebihan dan Kekurangan:
+
+| Pendekatan            | Kelebihan                                                  | Kekurangan                                                   |
+|-----------------------|------------------------------------------------------------|---------------------------------------------------------------|
+| Content-Based         | Tidak butuh interaksi pengguna, cocok untuk pengguna baru | Tidak bisa menangkap selera tersembunyi dari pengguna        |
+| Collaborative         | Menangkap pola preferensi pengguna                        | Butuh banyak data interaksi, cold start untuk pengguna baru  |
+
 ---
 
+## Evaluation
+
+### Content-Based Filtering
+
+- **Metrik**: Precision, Recall, F1-Score
+- **Threshold Similarity**: ≥ 0.3 untuk dianggap relevan
+
+**Hasil Evaluasi:**
+- Average Precision: **0.9775**
+- Average Recall: **0.0018**
+- Average F1-Score: **0.0037**
+
+> Insight: Precision tinggi, namun recall sangat rendah karena pendekatan ini tidak mempertimbangkan rating dari pengguna lain.
+
+### Collaborative Filtering
+
+- **Metrik**: RMSE (Root Mean Squared Error)** dan **MAE (Mean Absolute Error)
+- **Hasil Evaluasi**:
+  - RMSE: **0.8851**
+  - MAE: **0.6953**
+
+> Insight: Model cukup baik dalam memprediksi rating pengguna dengan error <1, semakin akurat prediksi rating terhadap data test.
+---
 ### Hubungan dengan Business Understanding dan Problem Statement
 - Sistem rekomendasi yang dikembangkan sudah menjawab problem utama, yaitu menyediakan rekomendasi film yang relevan dan personal bagi pengguna. Content-Based Filtering sangat efektif dalam memberikan rekomendasi yang tepat dari segi kemiripan konten, sedangkan Collaborative Filtering mampu memprediksi rating dengan akurasi yang memadai, membantu personalisasi.
 - Goals utama yaitu menghasilkan rekomendasi yang relevan dengan preferensi pengguna dan prediksi rating yang akurat telah tercapai secara parsial. Content-Based Filtering unggul dalam precision, tetapi kurang dalam recall. Collaborative Filtering unggul dalam prediksi rating, memberikan dasar yang kuat untuk rekomendasi personalisasi.
