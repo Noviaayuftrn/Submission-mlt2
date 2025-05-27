@@ -324,18 +324,18 @@ for uid, user_ratings in top_n.items():
 ```
 Menampilkan 1 pengguna pertama saja (`break` langsung di luar loop) dan menampilkan judul film + MovieID + predicted rating
 
-| No. | Judul Film                                                                 | MovieID | Predicted Rating |
-|-----|----------------------------------------------------------------------------|---------|------------------|
-| 1   | Reservoir Dogs (1992)                                                     | 1089    | 4.21             |
-| 2   | City of God (Cidade de Deus) (2002)                                       | 6016    | 4.19             |
-| 3   | City Lights (1931)                                                        | 3307    | 4.15             |
-| 4   | Fargo (1996)                                                               | 608     | 4.10             |
-| 5   | Delicatessen (1991)                                                       | 1175    | 4.10             |
-| 6   | Boot, Das (Boat, The) (1981)                                              | 1233    | 4.06             |
-| 7   | Wallace & Gromit: The Best of Aardman Animation (1996)                    | 720     | 4.05             |
-| 8   | Dogville (2003)                                                           | 7371    | 4.05             |
-| 9   | Being John Malkovich (1999)                                               | 2997    | 4.04             |
-| 10  | Monty Python and the Holy Grail (1975)                                    | 1136    | 4.02             | 
+| No | Judul Film                                                                 | MovieID | Predicted Rating |
+|----|----------------------------------------------------------------------------|---------|------------------|
+| 1  | Monty Python and the Holy Grail (1975)                                     | 1136    | 4.28             |
+| 2  | City Lights (1931)                                                         | 3307    | 4.17             |
+| 3  | City of God (Cidade de Deus) (2002)                                        | 6016    | 4.14             |
+| 4  | Chinatown (1974)                                                           | 1252    | 4.13             |
+| 5  | Reservoir Dogs (1992)                                                      | 1089    | 4.13             |
+| 6  | Delicatessen (1991)                                                        | 1175    | 4.12             |
+| 7  | Annie Hall (1977)                                                          | 1230    | 4.09             |
+| 8  | Straight Story, The (1999)                                                 | 2966    | 4.09             |
+| 9  | Third Man, The (1949)                                                      | 1212    | 4.07             |
+| 10 | Laputa: Castle in the Sky (Tenkû no shiro Rapyuta) (1986)                 | 6350    | 4.06             |
 
 
 ### Hasil
